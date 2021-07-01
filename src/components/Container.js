@@ -1,8 +1,12 @@
 import React from 'react';
+import firebase from 'firebase';
+import { db } from './fbconfig';
 
 const ContainerList = () => {
 
   const [Data, setData] = React.useState(null);
+  const [cartData, setCartData] = React.useState(null);
+  var cartList = [];
 
   const getData = async () => {
     await fetch("Data.json")
@@ -11,22 +15,33 @@ const ContainerList = () => {
         setData(data);
       });
   };
+  function getCartData() {
+    db.collection("cart").onSnapshot(function (querySnapShot){
+    setCartData(      
+        querySnapShot.docs.map((doc)=>({
+          id: doc.data().id,
+          createdAt : doc.data().createdAt
+        }))
+    );
+    });
+  }
 
   function addToCartFunction (id) {
-    console.log("Added to cart with id = ");
+    console.log("Added to cart with id = " + id);
+    db.collection("cart").add({
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      id: id
+    })
   };
 
   React.useEffect(() => {
     getData();
+    getCartData();
   }, []);
 
     return (
     <div className="product-container">
-      <div >
-        price :
-        <button className="sort-by-price-button">asce</button>
-        <button className="sort-by-price-button">desc</button>
-      </div>
+      
     {
       Data?.map((item) => (
       <div className="product" key={item.id}>
@@ -40,7 +55,7 @@ const ContainerList = () => {
           <p>Price : {item.price}</p>
           <p>Sizes :{item.sizes}</p>
           <p>For : {item.ideal}</p>
-          <button onClick={addToCartFunction(item.id)}>Add to Cart</button>
+          <button onClick={()=>addToCartFunction(item.id)}>Add to Cart</button>
         </div>
       </div>
       ))
